@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diallo Boye — Quantitative Researcher</title>
+<meta name="description" content="Diallo Boye — quantitative researcher trained on the Large Hadron Collider. Statistical inference, signal extraction, time series, uncertainty quantification.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBFBF9;
+    --ink: #16222C;
+    --muted: #5C6C79;
+    --line: #DCE1E5;
+    --fit-red: #C13527;     /* the signal fit line */
+    --hist-blue: #33658D;   /* the background histogram */
+    --hist-blue-soft: #A8C3D9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation: none !important; transition: none !important; }
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Sans 3", system-ui, sans-serif;
+    font-size: 1.06rem;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- header / hero ---------- */
+  header { padding: 72px 0 40px; }
+  .id-line {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .id-line a { color: var(--muted); }
+  h1 {
+    font-family: "STIX Two Text", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2.1rem, 5.5vw, 3.2rem);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    max-width: 15ch;
+  }
+  h1 .accent { color: var(--fit-red); }
+  .thesis {
+    margin-top: 22px;
+    max-width: 56ch;
+    font-size: 1.12rem;
+  }
+  .thesis em { font-family: "STIX Two Text", Georgia, serif; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  @media (max-width: 720px) { .hero-grid { grid-template-columns: 1fr; } }
+
+  /* the signature: a resonance search plot */
+  figure.bump { margin: 0; }
+  figure.bump svg { width: 100%; height: auto; display: block; }
+  figure.bump figcaption {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .fit-path {
+    stroke-dasharray: 620;
+    stroke-dashoffset: 620;
+    animation: draw 1.6s ease-out 0.4s forwards;
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .links { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px 26px; }
+  .links a {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--hist-blue-soft);
+    padding-bottom: 1px;
+  }
+  .links a:hover, .links a:focus-visible { border-color: var(--fit-red); color: var(--fit-red); }
+
+  /* ---------- sections ---------- */
+  section { padding: 46px 0; border-top: 1px solid var(--line); }
+  .fig-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .fig-label b { color: var(--fit-red); font-weight: 500; }
+  h2 {
+    font-family: "STIX Two Text", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.55rem;
+    margin-bottom: 16px;
+  }
+  p + p { margin-top: 14px; }
+  a { color: var(--hist-blue); }
+  a:focus-visible { outline: 2px solid var(--fit-red); outline-offset: 2px; }
+
+  /* projects */
+  .project {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--hist-blue);
+    padding: 22px 24px;
+    margin-top: 18px;
+    background: #fff;
+  }
+  .project.featured { border-left-color: var(--fit-red); }
+  .project h3 {
+    font-family: "STIX Two Text", Georgia, serif;
+    font-size: 1.18rem;
+    font-weight: 600;
+  }
+  .project h3 a { color: var(--ink); text-decoration: none; }
+  .project h3 a:hover { color: var(--fit-red); }
+  .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tags span {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+  .status {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--fit-red);
+  }
+
+  /* publications / talks */
+  ul.record { list-style: none; }
+  ul.record li {
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+    max-width: 68ch;
+  }
+  ul.record li:last-child { border-bottom: none; }
+  .venue { font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; color: var(--muted); display: block; margin-top: 3px; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 34px 0 60px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <p class="id-line">Diallo Boye · Saint-Genis-Pouilly, FR · <a href="mailto:diallo.boye@cern.ch">diallo.boye@cern.ch</a></p>
+  <div class="hero-grid">
+    <div>
+      <h1>I find rare signals in enormous, <span class="accent">noisy</span> datasets.</h1>
+      <p class="thesis">Quantitative researcher trained on the Large Hadron Collider — six years at CERN and Brookhaven National Laboratory turning petabytes of collisions into <em>calibrated, uncertainty-quantified</em> results. Now applying the same discipline to financial and industrial data.</p>
+      <nav class="links" aria-label="Profiles">
+        <a href="https://github.com/dialloboye">GitHub</a>
+        <a href="https://www.linkedin.com/in/YOUR-HANDLE">LinkedIn</a>
+        <a href="cv/Diallo_Boye_CV.pdf">CV (PDF)</a>
+      </nav>
+    </div>
+    <figure class="bump" aria-hidden="true">
+      <svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A resonance peak emerging over a falling background, with data points and error bars">
+        <!-- axes -->
+        <line x1="34" y1="10" x2="34" y2="206" stroke="var(--ink)" stroke-width="1.2"/>
+        <line x1="34" y1="206" x2="330" y2="206" stroke="var(--ink)" stroke-width="1.2"/>
+        <!-- background histogram (falling) -->
+        <g fill="var(--hist-blue-soft)" opacity="0.55">
+          <rect x="36"  y="60"  width="24" height="146"/>
+          <rect x="61"  y="84"  width="24" height="122"/>
+          <rect x="86"  y="104" width="24" height="102"/>
+          <rect x="111" y="121" width="24" height="85"/>
+          <rect x="136" y="135" width="24" height="71"/>
+          <rect x="161" y="147" width="24" height="59"/>
+          <rect x="186" y="157" width="24" height="49"/>
+          <rect x="211" y="165" width="24" height="41"/>
+          <rect x="236" y="172" width="24" height="34"/>
+          <rect x="261" y="178" width="24" height="28"/>
+          <rect x="286" y="183" width="24" height="23"/>
+        </g>
+        <!-- signal + background fit -->
+        <path class="fit-path" d="M 36 62 C 80 96, 120 122, 150 138 C 165 146, 172 118, 182 106 C 192 118, 198 152, 214 162 C 250 176, 290 183, 328 186"
+              fill="none" stroke="var(--fit-red)" stroke-width="2.4" stroke-linecap="round"/>
+        <!-- data points with error bars -->
+        <g stroke="var(--ink)" stroke-width="1.3">
+          <line x1="48"  y1="52"  x2="48"  y2="74"/><circle cx="48"  cy="63"  r="2.6" fill="var(--ink)"/>
+          <line x1="73"  y1="86"  x2="73"  y2="106"/><circle cx="73"  cy="96"  r="2.6" fill="var(--ink)"/>
+          <line x1="98"  y1="112" x2="98"  y2="130"/><circle cx="98"  cy="121" r="2.6" fill="var(--ink)"/>
+          <line x1="123" y1="126" x2="123" y2="144"/><circle cx="123" cy="135" r="2.6" fill="var(--ink)"/>
+          <line x1="148" y1="132" x2="148" y2="150"/><circle cx="148" cy="141" r="2.6" fill="var(--ink)"/>
+          <line x1="173" y1="99"  x2="173" y2="117"/><circle cx="173" cy="108" r="2.6" fill="var(--ink)"/>
+          <line x1="185" y1="97"  x2="185" y2="115"/><circle cx="185" cy="106" r="2.6" fill="var(--ink)"/>
+          <line x1="210" y1="152" x2="210" y2="168"/><circle cx="210" cy="160" r="2.6" fill="var(--ink)"/>
+          <line x1="235" y1="164" x2="235" y2="180"/><circle cx="235" cy="172" r="2.6" fill="var(--ink)"/>
+          <line x1="260" y1="171" x2="260" y2="187"/><circle cx="260" cy="179" r="2.6" fill="var(--ink)"/>
+          <line x1="285" y1="176" x2="285" y2="192"/><circle cx="285" cy="184" r="2.6" fill="var(--ink)"/>
+          <line x1="310" y1="180" x2="310" y2="196"/><circle cx="310" cy="188" r="2.6" fill="var(--ink)"/>
+        </g>
+        <!-- axis labels -->
+        <text x="330" y="222" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--muted)">observable</text>
+        <text x="14" y="16" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--muted)" transform="rotate(-90 14 16)" text-anchor="end">events</text>
+      </svg>
+      <figcaption>Fig. 0 — What I do, in one picture: a small excess over a large, falling background. The error bars are the point.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<section class="wrap" id="about">
+  <p class="fig-label"><b>Fig. 1</b> — About</p>
+  <h2>From proton collisions to production models</h2>
+  <p>I hold a PhD in particle physics (CERN/ATLAS, 2020) and am currently a Goldhaber Distinguished Fellow at Brookhaven National Laboratory, based at CERN — a fellowship awarded to fewer than five early-career scientists per year worldwide. Since April 2025 I lead an international research group of ~20 scientists searching for new physics in the Higgs sector.</p>
+  <p>The day-to-day of that work is quantitative research: statistical inference on high-dimensional data, machine-learning pipelines that replaced thousands of hand-tuned fits, time-series calibration delivered at sub-percent precision, and honest uncertainty quantification on every number we publish. In 2026 I was selected to give the plenary review of Higgs boson searches at LHCP (Paris) on behalf of the ATLAS, CMS and LHCb collaborations — 500+ scientists in the room.</p>
+  <p>I am now moving this toolkit into quantitative finance and data science, where the problems rhyme: weak signals, overwhelming noise, non-stationary processes, and decisions that are only as good as their error bars.</p>
+</section>
+
+<section class="wrap" id="projects">
+  <p class="fig-label"><b>Fig. 2</b> — Selected work</p>
+  <h2>Projects</h2>
+
+  <article class="project featured">
+    <h3><a href="https://github.com/dialloboye/swiss-power-forecast">swiss-power-forecast</a> <span class="status">● active</span></h3>
+    <p>Probabilistic day-ahead electricity price forecasting for the Swiss market on public ENTSO-E data. Leak-free feature engineering enforced by unit tests, walk-forward backtesting with block-bootstrap confidence intervals, and LightGBM quantile regression evaluated on <em>calibration</em> — not just point error.</p>
+    <div class="tags"><span>time series</span><span>quantile regression</span><span>backtesting</span><span>LightGBM</span><span>CI/CD</span></div>
+  </article>
+
+  <article class="project">
+    <h3>Market anomaly detection <span class="status">○ next up</span></h3>
+    <p>Applying resonance-search techniques from the LHC — likelihood ratios, multivariate classifiers, bump hunting — to detect regime changes and anomalous events in financial market data.</p>
+    <div class="tags"><span>anomaly detection</span><span>statistical inference</span></div>
+  </article>
+</section>
+
+<section class="wrap" id="research">
+  <p class="fig-label"><b>Fig. 3</b> — Record</p>
+  <h2>Research, publications &amp; talks</h2>
+  <ul class="record">
+    <li>Plenary: “Search for new scalars and BSM Higgs decays” — on behalf of ATLAS, CMS &amp; LHCb
+      <span class="venue">LHCP 2026, Paris · invited, 500+ attendees</span></li>
+    <li>BSM Higgs &amp; dark-sector searches (H→ZZ<sub>d</sub>, S→Z<sub>d</sub>Z<sub>d</sub>, invisible Higgs); ATLAS luminosity calibration at sub-percent precision; AC-LGAD detector R&amp;D
+      <span class="venue">ATLAS Collaboration · Physics Letters B and collaboration publications · <a href="https://inspirehep.net/authors/YOUR-ID">full list on INSPIRE-HEP</a></span></li>
+    <li>Six further invited talks at international conferences; co-supervision of graduate students from three continents
+      <span class="venue">2020 – 2026</span></li>
+  </ul>
+</section>
+
+<section class="wrap" id="contact">
+  <p class="fig-label"><b>Fig. 4</b> — Contact</p>
+  <h2>Get in touch</h2>
+  <p>Open to quantitative research, data science and research-engineering roles in the Geneva–Lausanne area or remote. The fastest way to reach me is <a href="mailto:diallo.boye@cern.ch">email</a>; I read everything.</p>
+</section>
+
+<footer class="wrap">
+  <p>© 2026 Diallo Boye · Built by hand, no frameworks, no trackers · χ²/ndf = 1.02</p>
+</footer>
+
+</body>
+</html>
