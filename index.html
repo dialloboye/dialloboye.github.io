@@ -240,11 +240,11 @@
   <p class="fig-label"><b>Fig. 2</b> — Selected work</p>
   <h2>Projects</h2>
 
-  <article class="project featured">
-    <h3><a href="https://github.com/dialloboye/swiss-power-forecast">swiss-power-forecast</a> <span class="status">● active</span></h3>
-    <p>Probabilistic day-ahead electricity price forecasting for the Swiss market on public ENTSO-E data. Leak-free feature engineering enforced by unit tests, walk-forward backtesting with block-bootstrap confidence intervals, and LightGBM quantile regression evaluated on <em>calibration</em> — not just point error.</p>
-    <div class="tags"><span>time series</span><span>quantile regression</span><span>backtesting</span><span>LightGBM</span><span>CI/CD</span></div>
-  </article>
+ <article class="project featured">
+  <h3><a href="https://github.com/dialloboye/swiss-power-forecast">swiss-power-forecast</a> <span class="status">● v1 complete</span></h3>
+  <p>Probabilistic day-ahead electricity price forecasting for the Swiss market on public ENTSO-E data (30k hourly observations, 2023–2026). LightGBM beats the naive baseline by 29% MAE in walk-forward backtesting, with block-bootstrap confidence intervals. The interesting part: the raw quantile model was overconfident — 56.5% empirical coverage on a nominal 80% interval. A conformal correction (CQR) restored it to 79.1%. Leak-free features enforced by unit tests; honest limitations documented in the repo.</p>
+  <div class="tags"><span>time series</span><span>quantile regression</span><span>conformal prediction</span><span>walk-forward backtesting</span><span>LightGBM</span><span>CI/CD</span></div>
+</article>
 
   <article class="project">
     <h3>Market anomaly detection <span class="status">○ next up</span></h3>
