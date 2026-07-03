@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The error bars are the point — Diallo Boye</title>
+<meta name="description" content="Probabilistic forecasting of Swiss day-ahead electricity prices: walk-forward backtesting, an overconfident quantile model, and a conformal fix.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBFBF9; --ink: #16222C; --muted: #5C6C79; --line: #DCE1E5;
+    --fit-red: #C13527; --hist-blue: #33658D; --hist-blue-soft: #A8C3D9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink);
+         font-family: "Source Sans 3", system-ui, sans-serif;
+         font-size: 1.06rem; line-height: 1.7; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 48px 0 8px; }
+  .crumb { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--fit-red); }
+  h1 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: clamp(1.8rem, 4.5vw, 2.5rem); line-height: 1.15; margin-top: 18px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem;
+          color: var(--muted); margin-top: 14px; }
+  article { padding: 30px 0 40px; }
+  article p + p { margin-top: 16px; }
+  h2 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: 1.4rem; margin: 34px 0 12px; }
+  a { color: var(--hist-blue); }
+  a:focus-visible { outline: 2px solid var(--fit-red); outline-offset: 2px; }
+  code { font-family: "IBM Plex Mono", monospace; font-size: 0.88em;
+         background: #F0F2F4; padding: 1px 5px; border-radius: 2px; }
+  figure { margin: 26px 0; }
+  figure img { width: 100%; border: 1px solid var(--line); display: block; }
+  figcaption { font-family: "IBM Plex Mono", monospace; font-size: 0.74rem;
+               color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  figcaption b { color: var(--fit-red); font-weight: 500; }
+  table { border-collapse: collapse; width: 100%; margin: 22px 0;
+          font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem;
+       color: var(--muted); font-weight: 500; }
+  td:not(:first-child), th:not(:first-child) { text-align: right;
+       font-variant-numeric: tabular-nums; }
+  .hl td { background: #fff; font-weight: 600; }
+  blockquote { border-left: 3px solid var(--hist-blue-soft); padding: 4px 0 4px 18px;
+               margin: 22px 0; color: var(--muted); font-style: italic; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 56px;
+           font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <p class="crumb"><a href="../index.html">← diallo boye</a></p>
+  <h1>The error bars are the point: forecasting Swiss electricity prices with honest uncertainty</h1>
+  <p class="meta">July 2026 · 8 min read · code &amp; figures: <a href="https://github.com/dialloboye/swiss-power-forecast">github.com/dialloboye/swiss-power-forecast</a></p>
+</header>
+
+<article class="wrap">
+
+<p>Electricity prices are a strange and wonderful time series. In three and a half years of hourly Swiss day-ahead data (2023–2026), the mean price is 97 EUR/MWh — but the minimum is <strong>−464</strong>. Negative prices occur in 2.8% of all hours: moments when producers pay consumers to take power off their hands, because on a grid without storage, someone must absorb the surplus of a windy night or a sunny noon. The distribution is bimodal, the intraday shape flips between winter and summer, and the volatility would make an equity index blush.</p>
+
+<p>In other words: an ideal playground for the statistical habits of experimental particle physics — weak signals, heavy tails, non-stationarity, and a hard requirement that you quantify how much you don't know. I spent a few evenings building a probabilistic forecaster for this market, on public <a href="https://transparency.entsoe.eu/">ENTSO-E</a> data. This post is about the part that went wrong in an instructive way: my model's uncertainty estimates were lying, and the diagnosis-and-fix is the most transferable lesson of the project.</p>
+
+<h2>The setup</h2>
+
+<p>Every day at noon, the day-ahead auction fixes tomorrow's 24 hourly prices. The task: at gate closure, predict each hour's price — not as a point, but as a distribution, summarised by the 10th, 50th and 90th percentiles. Inputs: lagged Swiss, German and French prices; the Swiss load forecast; German wind and solar generation forecasts (Germany's renewable fleet is the region's price-setter — its midday solar surplus is what drags Swiss prices negative through the interconnectors).</p>
+
+<p>One discipline from physics ported directly: <em>blinding</em>. Every feature must be computable strictly before the auction — price lags of at least 24 hours, rolling windows shifted to end yesterday, forecast series only if published pre-auction. In machine-learning language this is leakage prevention; the twist I'd advocate for is enforcing it mechanically. The repository's unit tests perturb "today's" prices and assert that today's features don't move. A no-look-ahead policy enforced by the framework, not by good intentions.</p>
+
+<h2>A hierarchy of models, and an honest ladder</h2>
+
+<p>A model earns its complexity by beating the tier below, out-of-sample. The ladder: a naive forecast (tomorrow = same hour yesterday), a seasonal naive (= same hour last week), a LightGBM point forecast, and LightGBM quantile regression. Evaluation is expanding-window walk-forward — train on year one, predict a month, grow the window, refit, repeat across two and a half years. Never shuffled cross-validation on a time series: shuffling trains on the future to predict the past.</p>
+
+<table>
+<tr><th>Model</th><th>MAE (EUR/MWh)</th><th>68% CI</th><th>Coverage of 80% PI</th></tr>
+<tr><td>Naive (D-1)</td><td>16.28</td><td>[15.86, 16.68]</td><td>–</td></tr>
+<tr><td>Seasonal naive (D-7)</td><td>19.07</td><td>[18.54, 19.48]</td><td>–</td></tr>
+<tr><td>LightGBM (point)</td><td>11.55</td><td>[11.31, 11.78]</td><td>–</td></tr>
+<tr><td>LightGBM (quantile)</td><td>11.42</td><td>[11.16, 11.67]</td><td><strong>56.5%</strong></td></tr>
+<tr class="hl"><td>LightGBM + CQR</td><td>12.75</td><td>[12.46, 13.02]</td><td><strong>79.1%</strong></td></tr>
+</table>
+
+<p>Two remarks on the table. First, the confidence intervals on MAE come from a <em>block</em> bootstrap (24-hour blocks): hourly errors are autocorrelated, and resampling single hours would fake independence and shrink the error bars — the forecasting equivalent of ignoring correlated systematics. Second, the D-1 naive beats the D-7 seasonal naive: in this market, recent information outweighs seasonal memory.</p>
+
+<p>LightGBM improves on the naive baseline by 29% in MAE, with non-overlapping intervals. So far, a fine but unremarkable result.</p>
+
+<h2>The model was overconfident — and said nothing</h2>
+
+<p>Then the check most projects skip: are the <em>intervals</em> honest? An 80% prediction interval should contain the realised price 80% of the time. Mine managed <strong>56.5%</strong>.</p>
+
+<figure>
+  <img src="figs/08_calibration_before.png" alt="Calibration plot before correction: median at 0.50, tails badly miscalibrated">
+  <figcaption><b>Fig. 1</b> — Quantile calibration before correction. The median is exact (0.50); both tails are far too tight: the truth falls below the nominal 10th percentile 22% of the time.</figcaption>
+</figure>
+
+<p>The calibration plot localises the failure precisely: well-calibrated in <em>location</em>, overconfident in <em>scale</em>. The model knows where prices centre but underestimates how much they disperse — it has learned typical weeks, and is blindsided by the regime jumps that make this market interesting in the first place. Any physicist will recognise the syndrome: the fit's central value is fine, the error bars are underestimated.</p>
+
+<h2>An in-situ calibration: conformalized quantile regression</h2>
+
+<p>The fix is a technique I wish I had met earlier: <a href="https://arxiv.org/abs/1905.03222">conformalized quantile regression</a> (Romano, Patterson &amp; Candès, 2019). Hold out the most recent 90 days of each training window as a calibration set. On it, measure the <em>conformity scores</em> — how far outside its own intervals the model actually lands. Take the appropriately corrected 80th percentile of those scores, and widen every future interval by exactly that margin. Distribution-free, no retraining, about thirty lines of code.</p>
+
+<p>This is, move for move, an in-situ calibration: don't trust the simulation's resolution — measure it in a control region and propagate it. Coverage went from 56.5% to <strong>79.1%</strong> against the 80% target.</p>
+
+<figure>
+  <img src="figs/08_calibration.png" alt="Calibration plot after CQR: all three quantiles on the diagonal">
+  <figcaption><b>Fig. 2</b> — After conformalization: 0.11 / 0.52 / 0.90 against nominal 0.10 / 0.50 / 0.90.</figcaption>
+</figure>
+
+<figure>
+  <img src="figs/07_forecast_intervals.png" alt="Two weeks of out-of-sample forecasts with 80% prediction intervals">
+  <figcaption><b>Fig. 3</b> — Two weeks of out-of-sample forecasts with conformalized 80% intervals. Note 25 June: the spike to ~320 EUR/MWh still escapes the band — see the caveats.</figcaption>
+</figure>
+
+<h2>What it costs, and what it still can't do</h2>
+
+<p>Honest accounting requires the fine print. The conformal model's MAE is slightly <em>worse</em> (12.75 vs 11.42): the calibration split sacrifices training data, so the median degrades a little. Nothing forces one model to do both jobs — in production you would take point forecasts from the full-data model and intervals from the conformal one.</p>
+
+<p>More fundamentally, vanilla CQR guarantees <em>marginal</em> coverage — 80% on average over all hours — not <em>conditional</em> coverage in every regime. The correction is a constant margin, so spike days still escape the band, as 25 June shows above. Adaptive conformal methods, which let the margin respond to the current regime, are the natural next iteration. And the feature set omits gas and CO₂ prices, a known driver of the level of the supply stack.</p>
+
+<blockquote>A forecast without calibrated uncertainty is an opinion with decimals. The most useful thing this project produced is not the 29% MAE improvement — it's the plot that caught the model overstating its own confidence, and a cheap, principled way to make it honest.</blockquote>
+
+<p>Code, tests, and every figure: <a href="https://github.com/dialloboye/swiss-power-forecast">github.com/dialloboye/swiss-power-forecast</a>. The data is free — ENTSO-E's transparency platform is a gift to anyone who wants a genuinely hard time series to practise on.</p>
+
+</article>
+
+<footer class="wrap">
+  <p>© 2026 Diallo Boye · <a href="../index.html" style="color:var(--muted)">home</a> · χ²/ndf = 1.02</p>
+</footer>
+
+</body>
+</html>
