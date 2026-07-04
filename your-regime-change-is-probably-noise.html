@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your regime change is probably noise — Diallo Boye</title>
+<meta name="description" content="A bump hunt on 26 years of S&P 500 volatility: local vs global significance, trial factors, and why 'noise' is a modelling choice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBFBF9; --ink: #16222C; --muted: #5C6C79; --line: #DCE1E5;
+    --fit-red: #C13527; --hist-blue: #33658D; --hist-blue-soft: #A8C3D9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink);
+         font-family: "Source Sans 3", system-ui, sans-serif;
+         font-size: 1.06rem; line-height: 1.7; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 48px 0 8px; }
+  .crumb { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--fit-red); }
+  h1 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: clamp(1.8rem, 4.5vw, 2.5rem); line-height: 1.15; margin-top: 18px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem;
+          color: var(--muted); margin-top: 14px; }
+  article { padding: 30px 0 40px; }
+  article p + p { margin-top: 16px; }
+  h2 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: 1.4rem; margin: 34px 0 12px; }
+  a { color: var(--hist-blue); }
+  a:focus-visible { outline: 2px solid var(--fit-red); outline-offset: 2px; }
+  code { font-family: "IBM Plex Mono", monospace; font-size: 0.88em;
+         background: #F0F2F4; padding: 1px 5px; border-radius: 2px; }
+  figure { margin: 26px 0; }
+  figure img { width: 100%; border: 1px solid var(--line); display: block; }
+  figcaption { font-family: "IBM Plex Mono", monospace; font-size: 0.74rem;
+               color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  figcaption b { color: var(--fit-red); font-weight: 500; }
+  table { border-collapse: collapse; width: 100%; margin: 22px 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem;
+       color: var(--muted); font-weight: 500; }
+  td:not(:first-child), th:not(:first-child) { text-align: right;
+       font-variant-numeric: tabular-nums; }
+  .hl td { background: #fff; font-weight: 600; }
+  blockquote { border-left: 3px solid var(--hist-blue-soft); padding: 4px 0 4px 18px;
+               margin: 22px 0; color: var(--muted); font-style: italic; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 56px;
+           font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <p class="crumb"><a href="../index.html">← diallo boye</a></p>
+  <h1>Your regime change is probably noise — and “noise” is a choice</h1>
+  <p class="meta">July 2026 · 9 min read · code &amp; figures: <a href="https://github.com/dialloboye/market-regime-scan">github.com/dialloboye/market-regime-scan</a></p>
+</header>
+
+<article class="wrap">
+
+<p>My day job is searching for new particles, and the trade has one iron rule about scanning: if you look in enough places, you <em>will</em> find something. Scan a mass spectrum and local three-sigma bumps appear as a matter of arithmetic — which is why physics reports <em>global</em> significance, deflated by the number of places you looked. We call the correction the look-elsewhere effect, and we compute it the honest way: simulate experiments with no signal, and ask how loud pure noise gets.</p>
+
+<p>Quantitative finance has the same disease under different names — backtest overfitting, p-hacked trading signals, data-snooped anomalies. It also has its own correction literature: White's reality check, and López de Prado's <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551">deflated Sharpe ratio</a> and probability of backtest overfitting. Same mathematics, different vocabulary. I wanted to see the effect end to end on a concrete question, so I ran a physics-style scan on a market classic: <em>volatility regime detection</em>.</p>
+
+<h2>A bump hunt on the time axis</h2>
+
+<p>The setup is deliberately simple. Take 26 years of daily S&amp;P 500 log-returns (2000–2026, free from Yahoo Finance). At each date, compare the variance of the 60 trading days before against the 60 days after — a standardized absolute log variance ratio. A volatility regime change shows up as a localized excursion of this statistic: a sliding signal region tested against its own sideband, except the axis is time rather than mass.</p>
+
+<figure>
+  <img src="figs/05_scan_spx.png" alt="Variance-ratio scan statistic over 26 years of S&P 500 returns">
+  <figcaption><b>Fig. 1</b> — The scan. Dashed red line: the naive local “3σ” threshold. Famous stress events annotated. The statistic is two-sided: it fires on volatility switching off (early 2012, the euro-crisis calm-down) as readily as on crises.</figcaption>
+</figure>
+
+<p>Against the naive threshold — treating each date as if it were the only test — the scan finds <strong>27 distinct local “3σ” regime changes</strong>. More than one per year. Some sit on celebrated dates: Lehman (2008), the eve of Volmageddon (early 2018), COVID (January 2020, of which more below). Others sit on dates with no Wikipedia page. A naive analysis publishes all 27.</p>
+
+<h2>The toys deliver the first verdict</h2>
+
+<p>So I did what a physicist does: generated pseudo-experiments. Resample the actual returns in random blocks (a stationary bootstrap, mean block 20 days) — preserving the fat tails and short-range volatility clustering, but destroying the location of any true break — and run the <em>identical</em> scan on each toy. Five hundred times.</p>
+
+<p>Two numbers came back and rearranged my expectations. First: pure noise manufactures <strong>34.9</strong> local “3σ” peaks per 26-year experiment — <em>more than the 27 the real market produced</em>. Second: the global 5% threshold — the bar the scan's maximum must clear to be as rare globally as “3σ” pretends to be locally — sits at <strong>16.3</strong>, not 3. Against it, exactly one of the 27 peaks survives: COVID, at 16.7, with a global p-value of 0.036. The Global Financial Crisis — the most famous volatility event of the century, a local 9.6 — does not.</p>
+
+<p>If that feels wrong, hold the thought: it is the paper's point.</p>
+
+<h2>The null ladder: significance is a statement about noise</h2>
+
+<p>A bump's significance depends on the background model — every physicist learns this the hard way. The market version: <em>which</em> features of returns does your null preserve? I ran the same 27 peaks against three nulls of increasing realism:</p>
+
+<table>
+<tr><th>Null model</th><th>Keeps fat tails?</th><th>Keeps clustering?</th><th>Global 5% threshold</th><th>Survivors (of 27)</th></tr>
+<tr><td>Gaussian i.i.d.</td><td>no</td><td>no</td><td>4.3</td><td>18</td></tr>
+<tr><td>Empirical shuffle</td><td>yes</td><td>no</td><td>8.7</td><td>5</td></tr>
+<tr class="hl"><td>Block bootstrap (b=20)</td><td>yes</td><td>yes</td><td>16.3</td><td>1</td></tr>
+</table>
+
+<figure>
+  <img src="figs/08_null_ladder.png" alt="Three null max-statistic distributions with the 27 observed peaks as rug marks">
+  <figcaption><b>Fig. 2</b> — The ladder. Each distribution is the scan <em>maximum</em> under 500 toys of that null; red ticks are the 27 observed peaks. The same peak is a discovery against textbook noise and unremarkable against honest noise.</figcaption>
+</figure>
+
+<p>Read the table bottom-up and the folk wisdom dies in two steps. Against textbook Gaussian noise — the null every casual “3σ” claim implicitly invokes — two-thirds of the peaks are discoveries. Keep the actual fat tails (excess kurtosis 10.6; days beyond 3σ occur at six times the Gaussian rate) and only the five celebrities remain. Keep the volatility clustering as well, and the market's own texture explains everything but COVID. In this data, ignoring clustering turns out to be the graver sin than ignoring fat tails — the threshold jumps by 7.6 points versus 4.4.</p>
+
+<h2>Even COVID is negotiable</h2>
+
+<p>The block length b is the null's memory: how many consecutive days of real market behaviour each toy fragment preserves. Twenty days was a choice. So I varied it.</p>
+
+<figure>
+  <img src="figs/09_block_sensitivity.png" alt="Global threshold as a function of bootstrap block length, crossing the observed COVID maximum near b of 30">
+  <figcaption><b>Fig. 3</b> — The global threshold vs block length. Somewhere around b ≈ 30 days it crosses the observed COVID maximum: with enough clustering in the null, nothing in 26 years is globally significant.</figcaption>
+</figure>
+
+<p>For blocks beyond roughly a month, the toys themselves contain COVID-magnitude volatility episodes as ordinary realizations — and the last survivor falls. This is not a claim that COVID “wasn't real.” It is <em>signal contamination of the background model</em>, the exact phenomenon a physicist meets when the sidebands are drawn wide enough to swallow the peak: a null that preserves months of clustering has absorbed regime-switching itself into its definition of noise. At that point the question dissolves rather than resolves — COVID stops being an anomalous break and becomes a recurring, endogenous feature of the volatility process. Which is, incidentally, what the GARCH school of econometrics has said for forty years. It is oddly satisfying to rediscover it with a bump hunt.</p>
+
+<h2>What this buys you in practice</h2>
+
+<p>The transferable conclusions, in descending order of generality:</p>
+
+<p><strong>Count your trials.</strong> Any scanned claim — a regime break, a backtested strategy, a screened factor — carries a trial factor, and it is usually enormous. Here, the honest threshold was more than five times the naive one. If a result comes from a search and its significance is not deflated, the significance is an upper bound on marketing, not evidence.</p>
+
+<p><strong>State your null, because it is doing the work.</strong> The identical peak was a discovery, marginal, or nothing, depending on whether the noise model kept fat tails and clustering. In finance the null is rarely stated at all; “significant” usually means Gaussian-i.i.d.-significant, the weakest rung of the ladder.</p>
+
+<p><strong>Report the sensitivity, not the verdict.</strong> The b-scan is one extra figure, and it converts an arbitrary choice into a documented one. My repo's answer to “is COVID a regime break?” is honestly: <em>at what block length?</em></p>
+
+<blockquote>The scan found 27 regime changes. Noise alone produces 35. One survived an honest null, and even that one is negotiable. If this feels deflating — that is what deflation is for.</blockquote>
+
+<p>Code, toys, tests, and every figure: <a href="https://github.com/dialloboye/market-regime-scan">github.com/dialloboye/market-regime-scan</a>. The companion project — probabilistic electricity price forecasting with calibrated intervals — lives <a href="error-bars-are-the-point.html">here</a>.</p>
+
+</article>
+
+<footer class="wrap">
+  <p>© 2026 Diallo Boye · <a href="../index.html" style="color:var(--muted)">home</a> · χ²/ndf = 1.02</p>
+</footer>
+
+</body>
+</html>
