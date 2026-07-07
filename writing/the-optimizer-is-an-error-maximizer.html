@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The optimizer is an error maximizer — Diallo Boye</title>
+<meta name="description" content="A six-strategy walk-forward horserace, Ledoit-Wolf shrinkage from the paper, and a 2×2 VaR backtest: why the traffic light is green while every model fails.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBFBF9; --ink: #16222C; --muted: #5C6C79; --line: #DCE1E5;
+    --fit-red: #C13527; --hist-blue: #33658D; --hist-blue-soft: #A8C3D9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink);
+         font-family: "Source Sans 3", system-ui, sans-serif;
+         font-size: 1.06rem; line-height: 1.7; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 48px 0 8px; }
+  .crumb { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--fit-red); }
+  h1 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: clamp(1.8rem, 4.5vw, 2.5rem); line-height: 1.15; margin-top: 18px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem;
+          color: var(--muted); margin-top: 14px; }
+  article { padding: 30px 0 40px; }
+  article p + p { margin-top: 16px; }
+  h2 { font-family: "STIX Two Text", Georgia, serif; font-weight: 600;
+       font-size: 1.4rem; margin: 34px 0 12px; }
+  a { color: var(--hist-blue); }
+  a:focus-visible { outline: 2px solid var(--fit-red); outline-offset: 2px; }
+  figure { margin: 26px 0; }
+  figure img { width: 100%; border: 1px solid var(--line); display: block; }
+  figcaption { font-family: "IBM Plex Mono", monospace; font-size: 0.74rem;
+               color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  figcaption b { color: var(--fit-red); font-weight: 500; }
+  table { border-collapse: collapse; width: 100%; margin: 22px 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); }
+  th { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem;
+       color: var(--muted); font-weight: 500; }
+  td:not(:first-child), th:not(:first-child) { text-align: right;
+       font-variant-numeric: tabular-nums; }
+  .hl td { background: #fff; font-weight: 600; }
+  blockquote { border-left: 3px solid var(--hist-blue-soft); padding: 4px 0 4px 18px;
+               margin: 22px 0; color: var(--muted); font-style: italic; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 56px;
+           font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <p class="crumb"><a href="../index.html">← diallo boye</a></p>
+  <h1>The optimizer is an error maximizer — and the traffic light is green anyway</h1>
+  <p class="meta">July 2026 · 9 min read · code &amp; figures: <a href="https://github.com/dialloboye/shrunken-portfolios">github.com/dialloboye/shrunken-portfolios</a></p>
+</header>
+
+<article class="wrap">
+
+<p>Here is the punchline first: over twenty years of out-of-sample testing, the portfolio strategy explicitly constructed to maximize the Sharpe ratio finished <em>last on Sharpe</em> — 0.30 against 0.74 for the humblest possible alternative, equal weights across the board. The optimizer did not merely fail to add value; it destroyed it, on the exact metric it optimizes. This post is about why that happens, what the industry-standard fix does and doesn't repair, and what I found when I then backtested the resulting portfolio's risk model the way a bank must: every standard VaR model failed twenty years of statistical testing — while remaining comfortably green on the regulatory dashboard.</p>
+
+<h2>The setup</h2>
+
+<p>Eleven liquid US ETFs (nine sectors, long Treasuries, gold), daily data 2005–2026, and six construction rules racing under one honest protocol: estimate on the trailing 252 days, rebalance every 21, pay 10 basis points per unit of turnover, never peek (the no-look-ahead rule is enforced by a unit test that poisons future data and asserts the weights don't move). The contestants: equal weight (1/N), minimum variance, and maximum Sharpe — the last two each in two flavours, sample covariance and <a href="http://www.ledoit.net/honey.pdf">Ledoit-Wolf shrinkage</a> (implemented from the 2004 paper, not imported) — plus risk parity.</p>
+
+<table>
+<tr><th>Strategy</th><th>Ann. return</th><th>Ann. vol</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th></tr>
+<tr><td>1/N</td><td>11.1%</td><td>15.1%</td><td>0.74</td><td>−42%</td><td>0.00</td></tr>
+<tr class="hl"><td>Min-variance (sample)</td><td>8.7%</td><td>8.3%</td><td>1.04</td><td>−20%</td><td>0.22</td></tr>
+<tr><td>Min-variance (Ledoit-Wolf)</td><td>8.3%</td><td>8.3%</td><td>1.00</td><td>−19%</td><td>0.19</td></tr>
+<tr><td>Max-Sharpe (sample)</td><td>4.8%</td><td>14.4%</td><td>0.33</td><td>−37%</td><td>1.51</td></tr>
+<tr><td>Max-Sharpe (Ledoit-Wolf)</td><td>4.7%</td><td>15.8%</td><td>0.30</td><td>−43%</td><td>1.49</td></tr>
+<tr><td>Risk parity</td><td>8.6%</td><td>10.3%</td><td>0.84</td><td>−23%</td><td>0.20</td></tr>
+</table>
+
+<figure>
+  <img src="figs/05_equity_curves.png" alt="Equity curves of six strategies over 20 years">
+  <figcaption><b>Fig. 1</b> — Growth of one unit, net of costs. The two max-Sharpe curves spend twenty years below everything else, trading 1.5× their book at every monthly rebalance — turnover as a direct measurement of estimation noise.</figcaption>
+</figure>
+
+<h2>Where the poison actually is</h2>
+
+<p>Michaud called mean-variance optimization "error maximization" in 1989: hand an optimizer noisy parameter estimates and it loads up on precisely the assets whose parameters are most flattered by noise. DeMiguel, Garlappi and Uppal made the consequence famous in 2009 — naive 1/N beats optimized portfolios out-of-sample with embarrassing regularity. My table reproduces both results, but its internal contrast localizes the poison more precisely than either headline.</p>
+
+<p>Look at min-variance: Sharpe 1.04, at half the volatility of 1/N and half its drawdown. Optimization <em>works</em> there. The difference between the strategy that wins and the strategy that loses is exactly one ingredient: expected returns. Min-variance needs only the covariance matrix; max-Sharpe also needs a forecast of means — and trailing sample means of noisy returns are catastrophically imprecise (Merton pointed this out in 1980: variances are estimable from data at hand; means are not). The error maximizer isn't optimization per se. It's optimization over quantities you cannot estimate.</p>
+
+<p>Which explains the second honest finding: Ledoit-Wolf shrinkage — the industry-standard repair — changed almost nothing here (1.00 vs 1.04; even the turnover barely moved). Not because shrinkage is snake oil, but because at 11 assets and 252 observations the sample covariance was never the bottleneck: its condition number sits at a benign ~63. Shrinkage earns its keep when N/T is large — a bank running five hundred names against one year of history lives in that regime; my toy universe does not, and saying so beats manufacturing a win. One genuinely surprising by-product from the diagnostics: the sample covariance's conditioning is <em>U-shaped</em> in the window length — it improves with data up to about a year, then degrades again as longer windows blend across volatility regimes. More data is only more information if the world holds still.</p>
+
+<h2>The bank chapter: green lights and failing brakes</h2>
+
+<p>I then took the strategy a practitioner would actually run — min-variance on the shrunk covariance — and backtested its 1-day 99% VaR the way a bank risk team must: count the exceedances, test the count (Kupiec), test the clustering (Christoffersen), and read the Basel traffic light. Five models, forming a 2×2 of distribution × dynamics plus a non-parametric reference:</p>
+
+<table>
+<tr><th>VaR model (99%)</th><th>Exceedances (expected)</th><th>Kupiec p</th><th>Christoffersen p</th><th>Basel zone</th></tr>
+<tr><td>Historical (252d)</td><td>68 (49)</td><td>0.010</td><td>0.000</td><td>green</td></tr>
+<tr><td>Gaussian (252d)</td><td>92 (49)</td><td>0.000</td><td>0.000</td><td>green</td></tr>
+<tr><td>EWMA (λ=0.94)</td><td>79 (52)</td><td>0.000</td><td>0.008</td><td>green</td></tr>
+<tr><td>Student-t (252d)</td><td>78 (49)</td><td>0.000</td><td>0.000</td><td>green</td></tr>
+<tr class="hl"><td>EWMA + Student-t (ν=6)</td><td>54 (52)</td><td>0.733</td><td>0.002</td><td>green</td></tr>
+</table>
+
+<p>Two things deserve a slow read. First, the rightmost column: <em>every</em> model is Basel-green, including the Gaussian one that produced nearly twice the exceedances it promised over twenty years. Both verdicts are correct answers to different questions — the traffic light looks at the last 250 days, and at the 99% level that window expects 2.5 exceedances, far too few to distinguish a working model from a broken one. Kupiec said as much in his own 1995 paper. Twenty years of data convicts every standard model; any given regulatory year acquits them. The light is green because the road has been straight lately, not because the brakes work.</p>
+
+<p>Second, the 2×2 structure. Fixing the fat tails alone (Student-t on slow volatility): 78 exceedances. Fixing the dynamics alone (fast EWMA volatility under thin Gaussian tails): 79. Nearly identical — each single repair buys almost nothing. Fixing both at once: 54 against 52 expected, Kupiec p = 0.73, dead-centre calibration. The two failures don't add; they compound — a fat tail hanging off a stale volatility estimate is still a stale forecast.</p>
+
+<figure>
+  <img src="figs/08_var_exceedances.png" alt="Portfolio returns against EWMA VaR with exceedances marked">
+  <figcaption><b>Fig. 2</b> — The portfolio against its VaR; every red marker is a day the model's promise broke. Note where they bunch: the onsets of 2008, 2020, 2022 — exactly the weeks a rolling window is still averaging in last year's calm.</figcaption>
+</figure>
+
+<p>The residual is honest and has a name: even the calibrated model fails the Christoffersen test (p = 0.002) — the <em>count</em> is right but the exceedances still arrive in bunches at regime onsets, because EWMA adapts in days while markets change in hours. Correct counts, wrong timing. Fixing that requires a genuinely conditional volatility model — GARCH, with the tail index estimated rather than imposed — which is the stated next step, not a hidden defect.</p>
+
+<h2>One worldview, three projects</h2>
+
+<p>This is the third project in a series, and the same two stylized facts have now driven all three: <strong>fat tails and volatility clustering</strong>. They made a quantile forecaster <a href="error-bars-are-the-point.html">overconfident about electricity prices</a>; they manufactured twenty-seven fake regime changes in <a href="your-regime-change-is-probably-noise.html">a scan of the S&amp;P 500</a>; here they break every textbook VaR model while hiding behind a green light — and quietly poison the optimizer upstream. Three domains, one lesson, stated once:</p>
+
+<blockquote>Every number extracted from noisy data carries an error bar, and most financial machinery is built as if it didn't. The tools that survive contact with reality are the ones that estimate their own uncertainty — and are tested on whether that estimate was honest.</blockquote>
+
+<p>Code, tests, and every figure: <a href="https://github.com/dialloboye/shrunken-portfolios">github.com/dialloboye/shrunken-portfolios</a>.</p>
+
+</article>
+
+<footer class="wrap">
+  <p>© 2026 Diallo Boye · <a href="../index.html" style="color:var(--muted)">home</a> · χ²/ndf = 1.02</p>
+</footer>
+
+</body>
+</html>
